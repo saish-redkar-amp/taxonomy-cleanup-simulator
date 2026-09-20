@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="glean-artifact-type" content="tracker_tables">
+<meta name="glean-artifact-type" content="dashboards">
+<title>Amplitude Data Governance Simulator</title>
+<style>
+:root{
+  --artifact-background:#ffffff;
+  --artifact-background-light:#f1f3f6;
+  --artifact-background-mid:#e9ecf1;
+  --artifact-border-light:#e3e6ec;
+  --artifact-border-dark:#cdd2db;
+  --artifact-primary-brand:#3559e6;
+  --artifact-primary-highlight:#0d0f14;
+  --artifact-primary-hover:#2442b8;
+  --artifact-selected:#eaeefc;
+  --artifact-text-primary:#11141a;
+  --artifact-text-secondary:#5c6470;
+  --artifact-text-highlight:#e8eefc;
+  --artifact-positive-background:#e8f6ee;
+  --artifact-positive-text:#11141a;
+  --artifact-positive:#159a6a;
+  --artifact-negative:#dc4c4c;
+  --artifact-warn:#c77d13;
+  --artifact-warn-bg:#fbf1df;
+  --artifact-card-shadow:none;
+}
+html[data-theme='dark']{
+  --artifact-background:#0a0b0e;
+  --artifact-background-light:#121419;
+  --artifact-background-mid:#181b22;
+  --artifact-border-light:#23262e;
+  --artifact-border-dark:#343844;
+  --artifact-primary-brand:#6a92ff;
+  --artifact-primary-highlight:#f5f7fb;
+  --artifact-primary-hover:#88a8ff;
+  --artifact-selected:#1a2030;
+  --artifact-text-primary:#eef0f4;
+  --artifact-text-secondary:#9aa0ad;
+  --artifact-text-highlight:#14213d;
+  --artifact-positive-background:#0e2a1d;
+  --artifact-positive-text:#c8f5da;
+  --artifact-positive:#46d39a;
+  --artifact-negative:#ff6b6b;
+  --artifact-warn:#e0a53f;
+  --artifact-warn-bg:#2a2110;
+}
+*{box-sizing:border-box}
+body{
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:15px;font-weight:400;line-height:1.55;letter-spacing:-0.005em;
+  background-color:var(--artifact-background);color:var(--artifact-text-primary);
+  margin:0;padding:0;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 28px 90px;}
+h1,h2,h3{font-weight:400;line-height:1.08;letter-spacing:-0.02em;color:var(--artifact-text-primary);margin:0;}
+h1{font-size:clamp(2.1rem,5vw,3.2rem);font-weight:300;}
+h2{font-size:clamp(1.35rem,3vw,2rem);}
+h3{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;}
+.eyebrow,.field-label,th{
+  font-family:"SF Mono","IBM Plex Mono","Cascadia Code","Consolas",monospace;
+  font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--artifact-text-secondary);
+}
+.mono{font-family:"SF Mono","IBM Plex Mono","Consolas",monospace;font-size:12.5px;}
+.lede{color:var(--artifact-text-secondary);max-width:760px;font-size:15.5px;margin-top:14px;}
+.hero{border-bottom:1px solid var(--artifact-border-light);padding-bottom:26px;margin-bottom:26px;}
+.hero .eyebrow{margin-bottom:16px;display:block;}
+
+/* KPI tiles */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:26px 0;}
+.kpi{background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:8px;padding:16px 16px 14px;position:relative;}
+.kpi .label{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--artifact-text-secondary);font-family:"SF Mono",monospace;display:flex;align-items:center;gap:5px;}
+.kpi .value{font-weight:300;font-size:2.3rem;line-height:1.05;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;margin-top:6px;}
+.kpi .sub{font-size:12px;color:var(--artifact-text-secondary);margin-top:2px;}
+.kpi.score .value{font-weight:400;}
+.gauge{height:6px;border-radius:99px;background:var(--artifact-background-mid);margin-top:10px;overflow:hidden;}
+.gauge > i{display:block;height:100%;border-radius:99px;background:var(--artifact-primary-brand);transition:width .5s ease,background .3s;}
+
+/* info icon */
+.info{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--artifact-border-dark);color:var(--artifact-text-secondary);font-size:9px;font-family:serif;cursor:help;position:relative;font-style:normal;line-height:1;}
+.info:hover .tip,.info:focus .tip{opacity:1;visibility:visible;transform:translateY(0);}
+.tip{position:absolute;bottom:130%;left:50%;transform:translate(-50%,4px);width:230px;background:var(--artifact-primary-highlight);color:var(--artifact-background);padding:9px 11px;border-radius:7px;font-size:11.5px;line-height:1.45;font-family:"Inter",sans-serif;font-weight:400;text-transform:none;letter-spacing:0;opacity:0;visibility:hidden;transition:.16s;z-index:60;text-align:left;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.18);}
+
+/* workspace */
+.workspace{display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start;}
+@media(max-width:900px){.workspace{grid-template-columns:1fr;}}
+
+/* filter bar */
+.filterbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
+.search{flex:1;min-width:200px;position:relative;}
+.search input{width:100%;appearance:none;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:7px;padding:9px 12px 9px 32px;color:var(--artifact-text-primary);font-size:14px;font-family:inherit;height:38px;}
+.search input:focus{outline:none;border-color:var(--artifact-primary-brand);box-shadow:0 0 0 3px var(--artifact-selected);}
+.search svg{position:absolute;left:10px;top:11px;color:var(--artifact-text-secondary);}
+select.pill,.seg{appearance:none;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:7px;padding:0 30px 0 12px;height:38px;color:var(--artifact-text-primary);font-size:13.5px;font-family:inherit;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5L5 6.5L8 3.5' stroke='%235c6470' stroke-width='1.4' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;}
+select.pill:focus{outline:none;border-color:var(--artifact-primary-brand);}
+.chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--artifact-text-secondary);cursor:pointer;user-select:none;height:38px;padding:0 4px;}
+.chk input{accent-color:var(--artifact-primary-brand);width:15px;height:15px;}
+
+/* action bar */
+.actionbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:9px;padding:10px 12px;margin-bottom:12px;transition:.2s;}
+.actionbar.disabled{opacity:.5;}
+.selcount{font-family:"SF Mono",monospace;font-size:12px;color:var(--artifact-text-secondary);margin-right:4px;white-space:nowrap;}
+.btn{appearance:none;border:1px solid var(--artifact-border-dark);background:var(--artifact-background);color:var(--artifact-text-primary);border-radius:7px;padding:7px 12px;font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;transition:.14s;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover:not(:disabled){border-color:var(--artifact-primary-brand);color:var(--artifact-primary-brand);}
+.btn:disabled{cursor:not-allowed;opacity:.45;}
+.btn.danger:hover:not(:disabled){border-color:var(--artifact-negative);color:var(--artifact-negative);}
+.btn.primary{background:var(--artifact-primary-brand);color:#fff;border-color:var(--artifact-primary-brand);}
+.btn.primary:hover:not(:disabled){background:var(--artifact-primary-hover);border-color:var(--artifact-primary-hover);color:#fff;}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--artifact-text-secondary);}
+.btn.ghost:hover:not(:disabled){color:var(--artifact-primary-brand);border-color:transparent;}
+
+/* table */
+.tablewrap{border:1px solid var(--artifact-border-light);border-radius:9px;overflow:hidden;}
+.tablescroll{max-height:60vh;overflow:auto;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+thead th{position:sticky;top:0;background:var(--artifact-background-mid);text-align:left;padding:10px 12px;border-bottom:1px solid var(--artifact-border-light);cursor:pointer;white-space:nowrap;z-index:2;}
+thead th.num{text-align:right;}
+thead th .arw{opacity:.4;font-size:9px;margin-left:3px;}
+thead th.sorted .arw{opacity:1;color:var(--artifact-primary-brand);}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--artifact-border-light);vertical-align:middle;}
+tbody tr{transition:background .12s;}
+tbody tr:hover{background:var(--artifact-background-light);}
+tbody tr.sel{background:var(--artifact-selected);}
+tbody tr.gone{opacity:.45;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono",monospace;font-size:12.5px;}
+.evname{font-weight:600;display:flex;align-items:center;gap:7px;}
+.evname .nm{}
+.evname.bad .nm{color:var(--artifact-negative);}
+.evmeta{font-size:11.5px;color:var(--artifact-text-secondary);margin-top:1px;}
+.flags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.flag{font-size:10px;font-family:"SF Mono",monospace;letter-spacing:.03em;padding:2px 6px;border-radius:4px;background:var(--artifact-warn-bg);color:var(--artifact-warn);border:1px solid transparent;white-space:nowrap;}
+.flag.crit{background:transparent;color:var(--artifact-negative);border-color:var(--artifact-negative);}
+.badge{font-size:10.5px;font-family:"SF Mono",monospace;padding:2px 7px;border-radius:99px;white-space:nowrap;display:inline-block;}
+.badge.live{background:var(--artifact-positive-background);color:var(--artifact-positive);}
+.badge.unexpected{background:var(--artifact-warn-bg);color:var(--artifact-warn);}
+.badge.deleted{background:transparent;color:var(--artifact-negative);border:1px solid var(--artifact-negative);}
+.badge.blocked{background:var(--artifact-background-mid);color:var(--artifact-text-secondary);}
+.badge.hidden{background:var(--artifact-background-mid);color:var(--artifact-text-secondary);}
+.badge.dropped{background:var(--artifact-background-mid);color:var(--artifact-text-secondary);}
+.badge.merged{background:var(--artifact-text-highlight);color:var(--artifact-primary-brand);}
+.hscore{font-family:"SF Mono",monospace;font-weight:600;font-size:12.5px;}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15px;height:15px;cursor:pointer;}
+
+/* inspector */
+.inspector{position:sticky;top:16px;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:10px;padding:18px;}
+.inspector h3{margin-bottom:4px;}
+.insp-empty{color:var(--artifact-text-secondary);font-size:13.5px;}
+.impact-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px dashed var(--artifact-border-light);font-size:13px;gap:10px;}
+.impact-row:last-child{border-bottom:none;}
+.impact-row .k{color:var(--artifact-text-secondary);}
+.impact-row .v{font-variant-numeric:tabular-nums;font-family:"SF Mono",monospace;text-align:right;}
+.impact-row .v .arrow{color:var(--artifact-text-secondary);margin:0 4px;}
+.up{color:var(--artifact-positive);}
+.down{color:var(--artifact-negative);}
+.note{font-size:12.5px;line-height:1.5;color:var(--artifact-text-secondary);background:var(--artifact-background);border:1px solid var(--artifact-border-light);border-radius:7px;padding:10px 11px;margin-top:12px;}
+.note b{color:var(--artifact-text-primary);}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(10,12,18,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.overlay.open{display:flex;}
+.modal{background:var(--artifact-background);border:1px solid var(--artifact-border-light);border-radius:12px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.28);}
+.modal-head{padding:20px 22px 12px;border-bottom:1px solid var(--artifact-border-light);}
+.modal-head .eyebrow{display:block;margin-bottom:8px;}
+.modal-body{padding:18px 22px;}
+.modal-foot{padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--artifact-border-light);}
+.reclist{margin:0;padding:0;list-style:none;font-size:13.5px;}
+.reclist li{padding:6px 0 6px 22px;position:relative;color:var(--artifact-text-secondary);}
+.reclist li::before{content:"";position:absolute;left:2px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--artifact-primary-brand);}
+.reclist li b{color:var(--artifact-text-primary);}
+.reclist li.neg::before{background:var(--artifact-negative);}
+.reclist li.pos::before{background:var(--artifact-positive);}
+.mergecfg{margin-top:16px;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:8px;padding:14px;}
+.mergecfg label{display:block;font-size:12px;color:var(--artifact-text-secondary);margin-bottom:5px;}
+.mergecfg input,.mergecfg select{width:100%;appearance:none;background:var(--artifact-background);border:1px solid var(--artifact-border-dark);border-radius:6px;padding:8px 10px;font-size:13.5px;font-family:inherit;color:var(--artifact-text-primary);margin-bottom:10px;}
+.mergecfg input:focus,.mergecfg select:focus{outline:none;border-color:var(--artifact-primary-brand);}
+.srcpill{display:inline-block;font-family:"SF Mono",monospace;font-size:12px;background:var(--artifact-background-mid);border-radius:5px;padding:2px 7px;margin:2px 3px 2px 0;}
+
+/* activity log */
+.section{margin-top:40px;padding-top:28px;border-top:1px solid var(--artifact-border-light);}
+.log{list-style:none;margin:14px 0 0;padding:0;font-size:13.5px;}
+.log li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--artifact-border-light);align-items:flex-start;}
+.log .t{font-family:"SF Mono",monospace;font-size:11.5px;color:var(--artifact-text-secondary);white-space:nowrap;padding-top:1px;min-width:64px;}
+.log .msg{flex:1;}
+.log .undo{color:var(--artifact-primary-brand);cursor:pointer;font-size:12.5px;font-weight:500;white-space:nowrap;}
+.log .undo:hover{text-decoration:underline;}
+.log-empty{color:var(--artifact-text-secondary);font-size:13.5px;}
+
+/* legend / reference */
+.reftable{width:100%;border-collapse:collapse;font-size:13px;margin-top:14px;border:1px solid var(--artifact-border-light);border-radius:9px;overflow:hidden;}
+.reftable th{background:var(--artifact-background-mid);padding:10px 12px;text-align:left;position:static;cursor:default;}
+.reftable td{padding:10px 12px;border-bottom:1px solid var(--artifact-border-light);vertical-align:top;}
+.reftable td:first-child{font-weight:600;white-space:nowrap;}
+.yes{color:var(--artifact-positive);font-weight:600;}
+.no{color:var(--artifact-negative);font-weight:600;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--artifact-primary-highlight);color:var(--artifact-background);padding:11px 18px;border-radius:9px;font-size:13.5px;opacity:0;transition:.28s;z-index:200;box-shadow:0 12px 30px rgba(0,0,0,.25);pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.src-note{font-size:12px;color:var(--artifact-text-secondary);margin-top:10px;}
+.src-note a{color:var(--artifact-primary-brand);text-decoration:none;}
+.src-note a:hover{text-decoration:underline;}
+
+@media print{
+  @page{size:auto !important;}
+  body{margin:0;padding:.4in .6in;background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+  .wrap{max-width:100% !important;}
+  .actionbar,.filterbar,.overlay,.toast,button,[role=button],.interactive-only{display:none !important;}
+  .tablescroll{max-height:none !important;overflow:visible !important;}
+  .workspace{grid-template-columns:1fr !important;}
+  .inspector{position:static !important;}
+  *,*::before,*::after{animation:none !important;transition:none !important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero" data-glean-id="hero">
+    <span class="eyebrow">Data Governance &amp; Hygiene · Interactive Sandbox</span>
+    <h1>Taxonomy Cleanup Simulator</h1>
+    <p class="lede">A safe playground modeling an Amplitude project's taxonomy. Query the catalog, surface bad taxonomy players and stale events, then <b>delete, block, hide, drop, or merge</b> them — and watch the downstream implications update live. Nothing here touches a real project; reset anytime.</p>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis" data-glean-id="kpi-strip">
+    <div class="kpi score" data-glean-id="kpi-score">
+      <div class="label">Governance Score <span class="info" tabindex="0">i<span class="tip">Composite health of the active taxonomy. Starts at 100 and is penalized for naming violations, missing owners/descriptions/categories, stale events, duplicates, and unexpected events. Rises as you clean up.</span></span></div>
+      <div class="value" id="k-score">—</div>
+      <div class="gauge"><i id="k-score-bar"></i></div>
+    </div>
+    <div class="kpi" data-glean-id="kpi-active-events">
+      <div class="label">Active Events</div>
+      <div class="value" id="k-active">—</div>
+      <div class="sub" id="k-active-sub">in tracking plan</div>
+    </div>
+    <div class="kpi" data-glean-id="kpi-limit">
+      <div class="label">Instrumentation Limit <span class="info" tabindex="0">i<span class="tip">Events counting toward the project's event-type limit (cap = 500 in this demo). Hidden and blocked events still count; deleted events do not.</span></span></div>
+      <div class="value" id="k-limit">—</div>
+      <div class="gauge"><i id="k-limit-bar"></i></div>
+    </div>
+    <div class="kpi" data-glean-id="kpi-stale">
+      <div class="label">Stale Events <span class="info" tabindex="0">i<span class="tip">Events with no ingested volume in 90+ days. Candidates for cleanup — but decide per event: retired, or newly broken instrumentation?</span></span></div>
+      <div class="value" id="k-stale">—</div>
+      <div class="sub">no volume 90d+</div>
+    </div>
+    <div class="kpi" data-glean-id="kpi-violations">
+      <div class="label">Taxonomy Issues <span class="info" tabindex="0">i<span class="tip">Count of active events carrying at least one governance flag: naming violation, missing description/owner/category, duplicate, or unexpected status.</span></span></div>
+      <div class="value" id="k-issues">—</div>
+      <div class="sub">events with flags</div>
+    </div>
+    <div class="kpi" data-glean-id="kpi-volume">
+      <div class="label">Monthly Volume <span class="info" tabindex="0">i<span class="tip">Sum of 30-day event volume across events still being ingested. Deleting or blocking an event removes its future volume; hiding and drop filters do not.</span></span></div>
+      <div class="value" id="k-vol">—</div>
+      <div class="sub">events ingested / 30d</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filterbar" data-glean-id="filter-bar">
+    <div class="search">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.4"/><path d="M9.2 9.2L12.5 12.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="q" placeholder="Query events by name, owner, or category…" autocomplete="off">
+    </div>
+    <select class="pill" id="f-status" title="Status filter">
+      <option value="all">All statuses</option>
+      <option value="live">Live</option>
+      <option value="unexpected">Unexpected</option>
+    </select>
+    <select class="pill" id="f-health" title="Health filter">
+      <option value="all">All health</option>
+      <option value="issues">Has issues</option>
+      <option value="stale">Stale (90d+)</option>
+      <option value="naming">Naming violations</option>
+      <option value="clean">Clean</option>
+    </select>
+    <label class="chk"><input type="checkbox" id="f-showgone"> Show removed</label>
+  </div>
+
+  <div class="workspace">
+    <div>
+      <!-- Action bar -->
+      <div class="actionbar disabled" id="actionbar" data-glean-id="action-bar">
+        <span class="selcount" id="selcount">0 selected</span>
+        <button class="btn danger" id="a-delete" disabled title="Remove from plan, keep history, free the limit">🗑 Delete</button>
+        <button class="btn" id="a-block" disabled title="Stop future ingestion, keep in dropdowns">⛔ Block</button>
+        <button class="btn" id="a-hide" disabled title="Remove from UI dropdowns only">🙈 Hide</button>
+        <button class="btn" id="a-drop" disabled title="Query-time drop filter, fully reversible">⌦ Drop filter</button>
+        <button class="btn primary" id="a-merge" disabled title="Merge 2+ events into one (needs 2+ selected)">⇄ Merge / Transform</button>
+        <button class="btn ghost" id="a-clear" disabled>Clear</button>
+      </div>
+
+      <!-- Table -->
+      <div class="tablewrap" data-glean-id="taxonomy-table">
+        <div class="tablescroll">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:34px" data-sort="none"><input type="checkbox" class="rowchk" id="selall" title="Select all visible"></th>
+                <th data-sort="name">Event <span class="arw">▾</span></th>
+                <th data-sort="status">Status <span class="arw">▾</span></th>
+                <th class="num" data-sort="health">Health <span class="arw">▾</span></th>
+                <th class="num" data-sort="lastVol">Last vol <span class="arw">▾</span></th>
+                <th class="num" data-sort="vol30d">30d vol <span class="arw">▾</span></th>
+                <th class="num" data-sort="queries">In charts <span class="arw">▾</span></th>
+                <th data-sort="owner">Owner <span class="arw">▾</span></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="src-note" data-glean-id="method-note">Simulated dataset. Rules mirror Amplitude Data: <a href="https://amplitude.com/docs/data/remove-invalid-data">remove invalid data</a>, <a href="https://amplitude.com/docs/data/automated-tasks-in-data-assistant">stale-event cleanup</a>, and <a href="https://amplitude.com/docs/data/transformations">transformations</a>.</div>
+    </div>
+
+    <!-- Inspector / implications -->
+    <aside class="inspector" id="inspector" data-glean-id="implications-panel">
+      <span class="eyebrow">Implications</span>
+      <h3 style="margin-top:6px">Selection impact</h3>
+      <div id="insp-content">
+        <p class="insp-empty">Select one or more events to preview how deleting, blocking, hiding, dropping, or merging them changes your taxonomy — before you commit.</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Activity log -->
+  <div class="section" data-glean-id="activity-log-section">
+    <span class="eyebrow">Governance Activity Log</span>
+    <h2 style="margin-top:8px">What you've changed</h2>
+    <p class="lede" style="margin-top:10px">Every action is reversible here — recover deleted events, unblock, unhide, remove drop filters, or unmerge, exactly as you can in Amplitude Data.</p>
+    <ul class="log" id="log"><li class="log-empty">No actions yet. Your cleanup history will appear here.</li></ul>
+    <button class="btn ghost interactive-only" id="reset" style="margin-top:14px">↺ Reset simulator to initial state</button>
+  </div>
+
+  <!-- Reference -->
+  <div class="section" data-glean-id="reference-section">
+    <span class="eyebrow">Reference · Know the difference</span>
+    <h2 style="margin-top:8px">Delete vs. Block vs. Hide vs. Drop vs. Merge</h2>
+    <table class="reftable">
+      <thead>
+        <tr><th>Action</th><th>Stops ingestion?</th><th>Counts to limit?</th><th>Reversible?</th><th>What it's for</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Delete</td>
+          <td class="yes">Yes (future)</td>
+          <td class="no">No — frees limit</td>
+          <td class="yes">Recover anytime</td>
+          <td>Retire an event from the plan. History stays; it leaves dropdowns and future ingestion is blocked.</td>
+        </tr>
+        <tr>
+          <td>Block</td>
+          <td class="yes">Yes (future)</td>
+          <td class="no">Still counts</td>
+          <td>Unblock — but data during block is lost</td>
+          <td>Quickly stop ingesting bad/redundant data before a code fix. Blocked data can't be recovered.</td>
+        </tr>
+        <tr>
+          <td>Hide</td>
+          <td class="no">No — keeps ingesting</td>
+          <td class="no">Still counts</td>
+          <td class="yes">Fully, no data loss</td>
+          <td>Declutter dropdowns for an event you might need later. Nothing is lost.</td>
+        </tr>
+        <tr>
+          <td>Drop filter</td>
+          <td class="no">No (query-time)</td>
+          <td class="no">Doesn't affect volume</td>
+          <td class="yes">Fully, edit/delete filter</td>
+          <td>Hide events from charts at query time. Doesn't apply to exports; data still ingested.</td>
+        </tr>
+        <tr>
+          <td>Merge / Transform</td>
+          <td class="no">No (query-time)</td>
+          <td class="no">Raw data untouched</td>
+          <td class="yes">Unmerge anytime</td>
+          <td>Consolidate duplicate events/properties into one, retroactively across all history.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="src-note">Behavior sourced from Amplitude Docs. To permanently erase raw historical data (not just remove from the plan), use self-service data deletion or the User Privacy API — modeled here as "history retained".</p>
+  </div>
+
+</div>
+
+<!-- Confirm modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" data-glean-id="confirm-modal">
+    <div class="modal-head">
+      <span class="eyebrow" id="m-eyebrow">Confirm</span>
+      <h2 id="m-title">Action</h2>
+    </div>
+    <div class="modal-body">
+      <div id="m-targets" style="margin-bottom:14px"></div>
+      <span class="field-label" style="display:block;margin-bottom:8px">What happens</span>
+      <ul class="reclist" id="m-implications"></ul>
+      <div id="m-merge-cfg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="m-cancel">Cancel</button>
+      <button class="btn primary" id="m-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- Data model ---------------- */
+const LIMIT_CAP = 500;
+const fmt = n => n>=1000000 ? (n/1000000).toFixed(1)+'M' : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : (''+n);
+
+// seed taxonomy — mix of clean, stale, mis-named, dupes, unexpected, high-volume
+const SEED = [
+  {id:'e1', name:'Checkout Completed', cat:'Commerce', owner:'Growth', desc:1, lastVol:0, vol30d:184000, queries:22, status:'live', src:'iOS SDK'},
+  {id:'e2', name:'Product Viewed', cat:'Commerce', owner:'Growth', desc:1, lastVol:0, vol30d:920000, queries:31, status:'live', src:'Browser SDK'},
+  {id:'e3', name:'Add To Cart', cat:'Commerce', owner:'Growth', desc:1, lastVol:1, vol30d:410000, queries:18, status:'live', src:'Browser SDK'},
+  {id:'e4', name:'add_to_cart', cat:'', owner:'', desc:0, lastVol:2, vol30d:66000, queries:3, status:'live', src:'Android SDK'},   // duplicate + naming + missing meta
+  {id:'e5', name:'aReg_5_UserLoginSuccess', cat:'', owner:'', desc:0, lastVol:4, vol30d:22000, queries:2, status:'unexpected', src:'Legacy Web'}, // naming + unexpected + missing
+  {id:'e6', name:'aReg_Cart_ClickPayPal', cat:'', owner:'', desc:0, lastVol:6, vol30d:9000, queries:1, status:'unexpected', src:'Legacy Web'},
+  {id:'e7', name:'signup', cat:'', owner:'', desc:0, lastVol:3, vol30d:31000, queries:5, status:'live', src:'Browser SDK'}, // ambiguous naming
+  {id:'e8', name:'Sign Up Completed', cat:'Onboarding', owner:'Growth', desc:1, lastVol:0, vol30d:48000, queries:14, status:'live', src:'Browser SDK'},
+  {id:'e9', name:'GoogleAds Impression', cat:'Marketing', owner:'', desc:0, lastVol:1, vol30d:1240000, queries:2, status:'live', src:'Server'}, // redundant high-volume ad event
+  {id:'e10', name:'GoogleAds Click', cat:'Marketing', owner:'', desc:0, lastVol:1, vol30d:305000, queries:2, status:'live', src:'Server'},
+  {id:'e11', name:'Onboarding Step Viewed', cat:'Onboarding', owner:'Product', desc:1, lastVol:0, vol30d:73000, queries:11, status:'live', src:'iOS SDK'},
+  {id:'e12', name:'test_event_do_not_use', cat:'', owner:'', desc:0, lastVol:118, vol30d:0, queries:0, status:'unexpected', src:'Dev'}, // stale + junk
+  {id:'e13', name:'Legacy Video Play', cat:'Media', owner:'Alex Kim', desc:1, lastVol:142, vol30d:0, queries:1, status:'live', src:'iOS SDK'}, // stale, retired
+  {id:'e14', name:'Push Notification Opened', cat:'Lifecycle', owner:'Lifecycle', desc:1, lastVol:97, vol30d:0, queries:4, status:'live', src:'Braze'}, // stale but maybe broken instrumentation
+  {id:'e15', name:'Feature Flag Evaluated', cat:'Experiment', owner:'Platform', desc:1, lastVol:0, vol30d:512000, queries:9, status:'live', src:'Experiment SDK'},
+  {id:'e16', name:'searchResults', cat:'', owner:'', desc:0, lastVol:5, vol30d:88000, queries:6, status:'live', src:'Browser SDK'}, // naming
+  {id:'e17', name:'Search Results Shown', cat:'Discovery', owner:'Search', desc:1, lastVol:0, vol30d:91000, queries:8, status:'live', src:'Browser SDK'}, // dupe of e16
+  {id:'e18', name:'Purchase', cat:'', owner:'', desc:0, lastVol:0, vol30d:150000, queries:12, status:'live', src:'Server'}, // dupe of Checkout Completed, missing meta
+  {id:'e19', name:'Profile Updated', cat:'Account', owner:'Account', desc:1, lastVol:2, vol30d:24000, queries:7, status:'live', src:'Browser SDK'},
+  {id:'e20', name:'oldCampaignBanner_Dismiss', cat:'', owner:'', desc:0, lastVol:203, vol30d:0, queries:0, status:'unexpected', src:'Legacy Web'}, // stale + naming + junk
+  {id:'e21', name:'Screen Viewed', cat:'Navigation', owner:'Product', desc:1, lastVol:0, vol30d:640000, queries:16, status:'live', src:'iOS SDK'},
+  {id:'e22', name:'notif_click', cat:'', owner:'', desc:0, lastVol:88, vol30d:0, queries:1, status:'unexpected', src:'Braze'}, // stale-ish naming
+];
+
+let events = [];
+let logEntries = [];
+let sortKey = 'health', sortDir = 'desc';
+const selected = new Set();
+
+/* ---------------- Governance rules ---------------- */
+function isTitleCase(name){
+  if(/[_]/.test(name)) return false;                 // no underscores
+  if(/[a-z][A-Z]/.test(name)) return false;          // no camelCase humps
+  const words = name.trim().split(/\s+/);
+  return words.every(w => /^[A-Z0-9\[]/.test(w));    // each word starts uppercase (allow [Amplitude])
+}
+function flagsFor(e){
+  const f=[];
+  if(!isTitleCase(e.name)) f.push({t:'naming',crit:true});
+  if(!e.desc) f.push({t:'no description'});
+  if(!e.owner) f.push({t:'no owner'});
+  if(!e.cat) f.push({t:'no category'});
+  if(e.lastVol>=90) f.push({t:'stale 90d+',crit:true});
+  if(e.status==='unexpected') f.push({t:'unexpected'});
+  if(dupGroups[normName(e.name)] && dupGroups[normName(e.name)].length>1) f.push({t:'possible duplicate'});
+  return f;
+}
+function normName(n){ return n.toLowerCase().replace(/[^a-z]/g,''); }
+let dupGroups = {};
+function rebuildDupes(){
+  dupGroups={};
+  events.filter(e=>e.state==='active').forEach(e=>{
+    const k=normName(e.name);
+    (dupGroups[k]=dupGroups[k]||[]).push(e.id);
+  });
+  // also treat known semantic dupes
+  const semantic=[['e1','e18'],['e3','e4'],['e16','e17']];
+  semantic.forEach(([a,b])=>{
+    const ea=events.find(x=>x.id===a),eb=events.find(x=>x.id===b);
+    if(ea&&eb&&ea.state==='active'&&eb.state==='active'){
+      const key='dup_'+a;
+      dupGroups[key]=[a,b];
+    }
+  });
+}
+function healthScore(e){
+  let s=100; const f=flagsFor(e);
+  f.forEach(x=>{ s -= x.crit?22:10; });
+  return Math.max(0,s);
+}
+
+/* ---------------- Aggregate metrics ---------------- */
+function metrics(){
+  const active = events.filter(e=>e.state==='active');
+  // limit: active + blocked + hidden count; deleted/merged don't
+  const counting = events.filter(e=>['active','blocked','hidden','dropped'].includes(e.state)).length;
+  const stale = active.filter(e=>e.lastVol>=90).length;
+  const issues = active.filter(e=>flagsFor(e).length>0).length;
+  // volume: events still ingesting = active or hidden or dropped (dropped still ingests). blocked/deleted/merged stop future volume
+  const ingesting = events.filter(e=>['active','hidden','dropped'].includes(e.state));
+  const vol = ingesting.reduce((a,e)=>a+e.vol30d,0);
+  // score: avg health of active, minus a little for total debt
+  let score = active.length ? Math.round(active.reduce((a,e)=>a+healthScore(e),0)/active.length) : 100;
+  return {active:active.length, counting, stale, issues, vol, score};
+}
+
+/* ---------------- Rendering ---------------- */
+function renderKPIs(){
+  const m=metrics();
+  document.getElementById('k-score').textContent=m.score;
+  const bar=document.getElementById('k-score-bar');
+  bar.style.width=m.score+'%';
+  bar.style.background = m.score>=80?'var(--artifact-positive)': m.score>=55?'var(--artifact-warn)':'var(--artifact-negative)';
+  document.getElementById('k-active').textContent=m.active;
+  document.getElementById('k-limit').textContent=m.counting+' / '+LIMIT_CAP;
+  const lb=document.getElementById('k-limit-bar');
+  lb.style.width=Math.min(100,(m.counting/LIMIT_CAP)*100)+'%';
+  lb.style.background = (m.counting/LIMIT_CAP)>0.85?'var(--artifact-negative)':'var(--artifact-primary-brand)';
+  document.getElementById('k-stale').textContent=m.stale;
+  document.getElementById('k-issues').textContent=m.issues;
+  document.getElementById('k-vol').textContent=fmt(m.vol);
+}
+
+function visibleEvents(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const fs=document.getElementById('f-status').value;
+  const fh=document.getElementById('f-health').value;
+  const showGone=document.getElementById('f-showgone').checked;
+  let list=events.filter(e=>{
+    if(!showGone && e.state!=='active') return false;
+    if(q){
+      const hay=(e.name+' '+e.owner+' '+e.cat+' '+e.src).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    if(fs!=='all' && e.status!==fs) return false;
+    if(fh==='issues' && flagsFor(e).length===0) return false;
+    if(fh==='stale' && e.lastVol<90) return false;
+    if(fh==='naming' && isTitleCase(e.name)) return false;
+    if(fh==='clean' && flagsFor(e).length>0) return false;
+    return true;
+  });
+  const dir=sortDir==='asc'?1:-1;
+  list.sort((a,b)=>{
+    let va,vb;
+    switch(sortKey){
+      case 'name': va=a.name.toLowerCase(); vb=b.name.toLowerCase(); break;
+      case 'status': va=a.status; vb=b.status; break;
+      case 'health': va=healthScore(a); vb=healthScore(b); break;
+      case 'lastVol': va=a.lastVol; vb=b.lastVol; break;
+      case 'vol30d': va=a.vol30d; vb=b.vol30d; break;
+      case 'queries': va=a.queries; vb=b.queries; break;
+      case 'owner': va=(a.owner||'~').toLowerCase(); vb=(b.owner||'~').toLowerCase(); break;
+      default: va=0;vb=0;
+    }
+    return va<vb?-1*dir:va>vb?1*dir:0;
+  });
+  return list;
+}
+
+function renderTable(){
+  rebuildDupes();
+  const tb=document.getElementById('tbody');
+  const list=visibleEvents();
+  tb.innerHTML='';
+  if(!list.length){
+    tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--artifact-text-secondary)">No events match your query or filters.</td></tr>';
+  }
+  list.forEach(e=>{
+    const f=flagsFor(e);
+    const hs=healthScore(e);
+    const tr=document.createElement('tr');
+    tr.dataset.gleanId='row-'+e.id;
+    if(selected.has(e.id)) tr.classList.add('sel');
+    if(e.state!=='active') tr.classList.add('gone');
+    const dot = hs>=80?'var(--artifact-positive)':hs>=50?'var(--artifact-warn)':'var(--artifact-negative)';
+    const lastVolTxt = e.lastVol===0?'today': e.lastVol===1?'1d ago': e.lastVol+'d ago';
+    const badge = e.state==='active'
+        ? '<span class="badge '+e.status+'">'+e.status+'</span>'
+        : '<span class="badge '+e.state+'">'+e.state+(e.mergedInto?(' → '+shortName(e.mergedInto)):'')+'</span>';
+    const flagHtml = e.state==='active' && f.length
+        ? '<div class="flags">'+f.map(x=>'<span class="flag'+(x.crit?' crit':'')+'">'+x.t+'</span>').join('')+'</div>' : '';
+    tr.innerHTML =
+      '<td><input type="checkbox" class="rowchk" data-id="'+e.id+'" '+(selected.has(e.id)?'checked':'')+(e.state!=='active'?' disabled':'')+'></td>'+
+      '<td><div class="evname '+(!isTitleCase(e.name)&&e.state==='active'?'bad':'')+'"><span class="nm mono">'+esc(e.name)+'</span></div>'+
+        '<div class="evmeta">'+(e.cat||'—')+' · '+e.src+'</div>'+flagHtml+'</td>'+
+      '<td>'+badge+'</td>'+
+      '<td class="num"><span class="hscore"><span class="dot" style="background:'+dot+'"></span>'+hs+'</span></td>'+
+      '<td class="num">'+lastVolTxt+'</td>'+
+      '<td class="num">'+(e.vol30d?fmt(e.vol30d):'0')+'</td>'+
+      '<td class="num">'+e.queries+'</td>'+
+      '<td>'+(e.owner||'<span style="color:var(--artifact-negative)">unassigned</span>')+'</td>';
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('.rowchk').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      const id=cb.dataset.id;
+      if(cb.checked) selected.add(id); else selected.delete(id);
+      syncSelectionUI();
+    });
+  });
+  // select-all reflects visible active
+  const selall=document.getElementById('selall');
+  const visActive=list.filter(e=>e.state==='active');
+  selall.checked = visActive.length>0 && visActive.every(e=>selected.has(e.id));
+}
+function shortName(id){const e=events.find(x=>x.id===id);return e?e.name:id;}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ---------------- Selection + inspector ---------------- */
+function syncSelectionUI(){
+  const n=selected.size;
+  document.getElementById('selcount').textContent=n+' selected';
+  const bar=document.getElementById('actionbar');
+  bar.classList.toggle('disabled',n===0);
+  ['a-delete','a-block','a-hide','a-drop','a-clear'].forEach(id=>document.getElementById(id).disabled=n===0);
+  document.getElementById('a-merge').disabled = n<2;
+  document.querySelectorAll('#tbody tr').forEach(tr=>{
+    const cb=tr.querySelector('.rowchk');
+    if(cb) tr.classList.toggle('sel', selected.has(cb.dataset.id));
+  });
+  renderInspector();
+}
+
+function selectedActive(){ return [...selected].map(id=>events.find(e=>e.id===id)).filter(e=>e&&e.state==='active'); }
+
+function renderInspector(){
+  const box=document.getElementById('insp-content');
+  const sel=selectedActive();
+  if(!sel.length){
+    box.innerHTML='<p class="insp-empty">Select one or more events to preview how deleting, blocking, hiding, dropping, or merging them changes your taxonomy — before you commit.</p>';
+    return;
+  }
+  const m=metrics();
+  const volSel=sel.reduce((a,e)=>a+e.vol30d,0);
+  const chartsHit=sel.reduce((a,e)=>a+e.queries,0);
+  const staleSel=sel.filter(e=>e.lastVol>=90).length;
+  const issueSel=sel.filter(e=>flagsFor(e).length>0).length;
+  // projected after DELETE (most common cleanup): frees limit, removes future volume
+  const afterLimit=m.counting - sel.length;
+  const afterVol=m.vol - volSel;
+  const remainActive=events.filter(e=>e.state==='active'&&!selected.has(e.id));
+  const afterScore= remainActive.length? Math.round(remainActive.reduce((a,e)=>a+healthScore(e),0)/remainActive.length):100;
+  box.innerHTML =
+    '<div class="impact-row"><span class="k">Selected events</span><span class="v">'+sel.length+'</span></div>'+
+    '<div class="impact-row"><span class="k">With issues</span><span class="v">'+issueSel+'</span></div>'+
+    '<div class="impact-row"><span class="k">Stale (90d+)</span><span class="v">'+staleSel+'</span></div>'+
+    '<div class="impact-row"><span class="k">Charts referencing</span><span class="v">'+chartsHit+'</span></div>'+
+    '<div class="impact-row"><span class="k">30d volume</span><span class="v">'+fmt(volSel)+'</span></div>'+
+    '<div style="margin:12px 0 6px"><span class="field-label">If you delete this selection</span></div>'+
+    '<div class="impact-row"><span class="k">Gov. score</span><span class="v">'+m.score+' <span class="arrow">→</span> <span class="'+(afterScore>=m.score?'up':'down')+'">'+afterScore+'</span></span></div>'+
+    '<div class="impact-row"><span class="k">Limit usage</span><span class="v">'+m.counting+' <span class="arrow">→</span> <span class="up">'+afterLimit+'</span></span></div>'+
+    '<div class="impact-row"><span class="k">Monthly volume</span><span class="v">'+fmt(m.vol)+' <span class="arrow">→</span> '+fmt(afterVol)+'</span></div>'+
+    (chartsHit>0?'<div class="note">⚠ <b>'+chartsHit+' saved chart reference'+(chartsHit>1?'s':'')+'</b> point at this selection. Deleting shows a removal banner on those charts; merging keeps them working via the new event. Consider notifying owners.</div>':'')+
+    (staleSel>0 && sel.length>staleSel? '' : staleSel>0? '<div class="note">These are stale. Decide per event: <b>retired</b> (delete) or <b>newly broken instrumentation</b> (investigate, don\'t delete).</div>':'')+
+    '<div class="note" style="margin-top:10px">Pick an action above. You\'ll see the full consequences and can confirm or cancel — everything is reversible from the activity log.</div>';
+}
+
+/* ---------------- Actions ---------------- */
+const ACTIONS={
+  delete:{
+    eyebrow:'Delete from tracking plan', title:'Delete selected events',
+    impl:(sel,charts)=>[
+      {t:'Removed from the tracking plan and from all event <b>dropdowns</b> immediately.'},
+      {t:'<b>Historical data is kept</b> — existing charts retain past data up to the deletion date.'},
+      {t:'Future ingestion is <b>blocked</b>; new sends of these events are dropped.', cls:'neg'},
+      {t:'These events <b>stop counting</b> toward your instrumentation limit.', cls:'pos'},
+      charts>0?{t:charts+' saved chart(s) show a <b>removal banner</b>; anyone can elect to keep the event.', cls:'neg'}:null,
+      {t:'Fully <b>recoverable</b> anytime from Data › Events › Deleted.', cls:'pos'},
+    ].filter(Boolean),
+    apply:(sel)=>{sel.forEach(e=>{e.state='deleted';}); return 'Deleted '+sel.length+' event'+(sel.length>1?'s':'');}
+  },
+  block:{
+    eyebrow:'Block ingestion', title:'Block selected events',
+    impl:(sel,charts)=>[
+      {t:'Amplitude <b>stops ingesting</b> these events going forward, without a code change.', cls:'neg'},
+      {t:'They <b>stay in dropdowns</b> and still <b>count toward your limit</b>.'},
+      {t:'Data sent while blocked is <b>never ingested and cannot be recovered</b>.', cls:'neg'},
+      {t:'Good for quickly stopping redundant/high-volume data (e.g. ad events now covered by a warehouse source) before you fix instrumentation.'},
+      {t:'Reversible — <b>unblock</b> anytime to resume ingestion.', cls:'pos'},
+    ],
+    apply:(sel)=>{sel.forEach(e=>{e.state='blocked';}); return 'Blocked '+sel.length+' event'+(sel.length>1?'s':'');}
+  },
+  hide:{
+    eyebrow:'Hide from UI', title:'Hide selected events',
+    impl:(sel,charts)=>[
+      {t:'Removed from event <b>dropdowns / pickers</b> to declutter the UI.'},
+      {t:'Amplitude <b>keeps ingesting</b> them — <b>no data is lost</b>.', cls:'pos'},
+      {t:'They <b>still count</b> toward your instrumentation limit.'},
+      {t:'Fully reversible — <b>unhide</b> anytime. Best when you may need the event later.', cls:'pos'},
+    ],
+    apply:(sel)=>{sel.forEach(e=>{e.state='hidden';}); return 'Hid '+sel.length+' event'+(sel.length>1?'s':'');}
+  },
+  drop:{
+    eyebrow:'Create drop filter', title:'Drop-filter selected events',
+    impl:(sel,charts)=>[
+      {t:'Removed from <b>charts at query time</b> only — a reversible, query-side filter.'},
+      {t:'Amplitude <b>keeps ingesting</b> the data; nothing is deleted.', cls:'pos'},
+      {t:'Does <b>not</b> affect your event-volume limit and does <b>not</b> apply to data exports.'},
+      {t:'Only available on the <b>main</b> branch. Restore by editing or deleting the filter.', cls:'pos'},
+    ],
+    apply:(sel)=>{sel.forEach(e=>{e.state='dropped';}); return 'Drop-filtered '+sel.length+' event'+(sel.length>1?'s':'');}
+  }
+};
+
+let pendingAction=null;
+function openConfirm(actionKey){
+  const sel=selectedActive();
+  if(!sel.length) return;
+  const cfg=ACTIONS[actionKey];
+  pendingAction={key:actionKey, ids:sel.map(e=>e.id)};
+  document.getElementById('m-eyebrow').textContent=cfg.eyebrow;
+  document.getElementById('m-title').textContent=cfg.title;
+  const charts=sel.reduce((a,e)=>a+e.queries,0);
+  document.getElementById('m-targets').innerHTML='<span class="field-label" style="display:block;margin-bottom:6px">Targets ('+sel.length+')</span>'+
+    sel.map(e=>'<span class="srcpill">'+esc(e.name)+'</span>').join('');
+  document.getElementById('m-implications').innerHTML=cfg.impl(sel,charts).map(i=>'<li class="'+(i.cls||'')+'">'+i.t+'</li>').join('');
+  document.getElementById('m-merge-cfg').innerHTML='';
+  document.getElementById('m-confirm').textContent='Confirm '+actionKey;
+  document.getElementById('overlay').classList.add('open');
+}
+
+function openMerge(){
+  const sel=selectedActive();
+  if(sel.length<2) return;
+  pendingAction={key:'merge', ids:sel.map(e=>e.id)};
+  document.getElementById('m-eyebrow').textContent='Merge / Transform';
+  document.getElementById('m-title').textContent='Merge into one event';
+  const charts=sel.reduce((a,e)=>a+e.queries,0);
+  const vol=sel.reduce((a,e)=>a+e.vol30d,0);
+  document.getElementById('m-targets').innerHTML='<span class="field-label" style="display:block;margin-bottom:6px">Merging '+sel.length+' source events</span>'+
+    sel.map(e=>'<span class="srcpill">'+esc(e.name)+'</span>').join('');
+  document.getElementById('m-implications').innerHTML=[
+    {t:'A single merged event is created; source events roll up into it <b>retroactively across all history</b>.', cls:'pos'},
+    {t:'This is a <b>query-time transformation</b> — your <b>raw data is untouched</b> and unmerge restores everything.', cls:'pos'},
+    {t:'Consolidates '+fmt(vol)+'/30d of duplicate volume into one clean event.', cls:'pos'},
+    charts>0?{t:charts+' chart(s) on the source events keep working, but should be <b>repointed</b> to the merged event for clarity.'}:null,
+    {t:'Optionally add a <b>distinguishing property</b> so you can still split the original events after merging.'},
+    {t:'Only creatable on the <b>main</b> branch with transformations enabled.'},
+  ].filter(Boolean).map(i=>'<li class="'+(i.cls||'')+'">'+i.t+'</li>').join('');
+  const suggested = suggestMergeName(sel);
+  document.getElementById('m-merge-cfg').innerHTML=
+    '<div class="mergecfg">'+
+      '<label>New merged event name</label>'+
+      '<input type="text" id="merge-name" value="'+esc(suggested)+'">'+
+      '<label>Add distinguishing property? (keeps source origin queryable)</label>'+
+      '<select id="merge-prop"><option value="">No — merge cleanly</option><option value="source_event">Yes — add "source_event" property</option></select>'+
+    '</div>';
+  document.getElementById('m-confirm').textContent='Merge events';
+  document.getElementById('overlay').classList.add('open');
+}
+function suggestMergeName(sel){
+  // crude: shared prefix words or a Title Case guess
+  const clean=sel.filter(e=>isTitleCase(e.name));
+  if(clean.length) return clean[0].name;
+  return sel[0].name.replace(/[_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+function confirmAction(){
+  if(!pendingAction) return;
+  const sel=pendingAction.ids.map(id=>events.find(e=>e.id===id)).filter(Boolean);
+  let msg, undoIds=pendingAction.ids.slice(), kind=pendingAction.key;
+  if(pendingAction.key==='merge'){
+    const name=(document.getElementById('merge-name').value||'Merged Event').trim();
+    const addProp=document.getElementById('merge-prop').value;
+    const totalVol=sel.reduce((a,e)=>a+e.vol30d,0);
+    const totalQ=sel.reduce((a,e)=>a+e.queries,0);
+    const newId='m'+Date.now();
+    events.push({id:newId,name:name,cat:sel.find(e=>e.cat)?.cat||'Merged',owner:sel.find(e=>e.owner)?.owner||'',desc:1,lastVol:Math.min(...sel.map(e=>e.lastVol)),vol30d:totalVol,queries:totalQ,status:'live',src:'Transformation',state:'active',mergedInto:null,isMerged:true,sources:sel.map(e=>e.id)});
+    sel.forEach(e=>{e.state='merged';e.mergedInto=newId;});
+    msg='Merged '+sel.length+' events into <b>'+esc(name)+'</b>'+(addProp?' (with source_event property)':'');
+    undoIds={newId, sources:sel.map(e=>e.id)};
+  } else {
+    msg = ACTIONS[pendingAction.key].apply(sel);
+  }
+  logEntries.unshift({time:new Date(), msg:msg, kind:kind, undoIds:undoIds});
+  selected.clear();
+  closeModal();
+  refreshAll();
+  toast(typeof msg==='string'?msg.replace(/<[^>]+>/g,''):'Done');
+}
+
+function undo(entry){
+  if(entry.kind==='merge'){
+    const merged=events.find(e=>e.id===entry.undoIds.newId);
+    if(merged) events=events.filter(e=>e.id!==merged.id);
+    entry.undoIds.sources.forEach(id=>{const e=events.find(x=>x.id===id);if(e){e.state='active';e.mergedInto=null;}});
+  } else {
+    (Array.isArray(entry.undoIds)?entry.undoIds:[]).forEach(id=>{const e=events.find(x=>x.id===id);if(e){e.state='active';e.mergedInto=null;}});
+  }
+  logEntries=logEntries.filter(l=>l!==entry);
+  refreshAll();
+  toast('Reverted');
+}
+
+function renderLog(){
+  const ul=document.getElementById('log');
+  if(!logEntries.length){ ul.innerHTML='<li class="log-empty">No actions yet. Your cleanup history will appear here.</li>'; return; }
+  ul.innerHTML='';
+  logEntries.forEach(entry=>{
+    const li=document.createElement('li');
+    const t=entry.time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const undoLabel = entry.kind==='merge'?'Unmerge': entry.kind==='delete'?'Recover': entry.kind==='block'?'Unblock': entry.kind==='hide'?'Unhide':'Remove filter';
+    li.innerHTML='<span class="t">'+t+'</span><span class="msg">'+entry.msg+'</span>';
+    const u=document.createElement('span'); u.className='undo interactive-only'; u.textContent='↩ '+undoLabel;
+    u.addEventListener('click',()=>undo(entry));
+    li.appendChild(u);
+    ul.appendChild(li);
+  });
+}
+
+function closeModal(){ document.getElementById('overlay').classList.remove('open'); pendingAction=null; }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2200); }
+
+function refreshAll(){ renderKPIs(); renderTable(); syncSelectionUI(); renderLog(); }
+
+/* ---------------- Init + wiring ---------------- */
+function init(){
+  events = SEED.map(e=>({...e, state:'active', mergedInto:null}));
+  logEntries=[]; selected.clear();
+  refreshAll();
+}
+
+document.getElementById('q').addEventListener('input',()=>renderTable());
+document.getElementById('q').addEventListener('keydown',e=>{ if(e.key==='Enter') e.preventDefault(); });
+document.getElementById('f-status').addEventListener('change',()=>renderTable());
+document.getElementById('f-health').addEventListener('change',()=>renderTable());
+document.getElementById('f-showgone').addEventListener('change',()=>renderTable());
+document.getElementById('selall').addEventListener('change',e=>{
+  const list=visibleEvents().filter(x=>x.state==='active');
+  if(e.target.checked) list.forEach(x=>selected.add(x.id)); else list.forEach(x=>selected.delete(x.id));
+  refreshAll();
+});
+document.querySelectorAll('thead th[data-sort]').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.sort; if(k==='none') return;
+    if(sortKey===k) sortDir=sortDir==='asc'?'desc':'asc'; else {sortKey=k;sortDir=(k==='name'||k==='owner'||k==='status')?'asc':'desc';}
+    document.querySelectorAll('thead th').forEach(x=>x.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.arw').textContent=sortDir==='asc'?'▴':'▾';
+    renderTable();
+  });
+});
+document.getElementById('a-delete').addEventListener('click',()=>openConfirm('delete'));
+document.getElementById('a-block').addEventListener('click',()=>openConfirm('block'));
+document.getElementById('a-hide').addEventListener('click',()=>openConfirm('hide'));
+document.getElementById('a-drop').addEventListener('click',()=>openConfirm('drop'));
+document.getElementById('a-merge').addEventListener('click',openMerge);
+document.getElementById('a-clear').addEventListener('click',()=>{selected.clear();refreshAll();});
+document.getElementById('m-cancel').addEventListener('click',closeModal);
+document.getElementById('m-confirm').addEventListener('click',confirmAction);
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.getElementById('reset').addEventListener('click',()=>{init();toast('Simulator reset');});
+
+init();
+
+/* ---------------- PDF export ---------------- */
+window.GleanBridge && window.GleanBridge.postMessage({actionId:'export-pdf',type:'glean-add-menu',metadata:{label:'Export as PDF',icon:'export'}});
+window.GleanBridge && window.GleanBridge.onMessage('action',function(data){ if(data.actionId==='export-pdf') window.print(); });
+</script>
+<style>@page { size: auto !important; }</style>
+</body>
+</html>
