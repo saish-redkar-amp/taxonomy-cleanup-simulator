@@ -67,7 +67,11 @@ h3{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;}
 .mono{font-family:"SF Mono","IBM Plex Mono","Consolas",monospace;font-size:12.5px;}
 .lede{color:var(--artifact-text-secondary);max-width:760px;font-size:15.5px;margin-top:14px;}
 .hero{border-bottom:1px solid var(--artifact-border-light);padding-bottom:26px;margin-bottom:26px;}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;}
 .hero .eyebrow{margin-bottom:16px;display:block;}
+.theme-toggle{appearance:none;border:1px solid var(--artifact-border-dark);background:var(--artifact-background-light);color:var(--artifact-text-primary);border-radius:999px;padding:7px 11px;font-size:12px;font-family:"SF Mono","IBM Plex Mono","Cascadia Code","Consolas",monospace;cursor:pointer;white-space:nowrap;transition:.14s;}
+.theme-toggle:hover{border-color:var(--artifact-primary-brand);color:var(--artifact-primary-brand);}
+.theme-toggle:focus-visible{outline:2px solid var(--artifact-primary-brand);outline-offset:2px;}
 
 /* KPI tiles */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:26px 0;}
@@ -97,7 +101,16 @@ h3{font-size:1.05rem;font-weight:600;letter-spacing:-0.01em;}
 select.pill,.seg{appearance:none;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:7px;padding:0 30px 0 12px;height:38px;color:var(--artifact-text-primary);font-size:13.5px;font-family:inherit;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5L5 6.5L8 3.5' stroke='%235c6470' stroke-width='1.4' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;}
 select.pill:focus{outline:none;border-color:var(--artifact-primary-brand);}
 .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--artifact-text-secondary);cursor:pointer;user-select:none;height:38px;padding:0 4px;}
-.chk input{accent-color:var(--artifact-primary-brand);width:15px;height:15px;}
+.chk input,
+input[type=checkbox].rowchk{appearance:none;-webkit-appearance:none;width:15px;height:15px;display:inline-grid;place-content:center;background:var(--artifact-background);border:1px solid var(--artifact-border-dark);border-radius:3px;cursor:pointer;}
+.chk input::before,
+input[type=checkbox].rowchk::before{content:"";width:7px;height:4px;border-left:2px solid var(--artifact-background);border-bottom:2px solid var(--artifact-background);transform:rotate(-45deg) scale(0);transform-origin:center;transition:transform .12s ease;}
+.chk input:checked,
+input[type=checkbox].rowchk:checked{background:var(--artifact-primary-brand);border-color:var(--artifact-primary-brand);}
+.chk input:checked::before,
+input[type=checkbox].rowchk:checked::before{transform:rotate(-45deg) scale(1);}
+.chk input:focus-visible,
+input[type=checkbox].rowchk:focus-visible{outline:2px solid var(--artifact-primary-brand);outline-offset:2px;}
 
 /* action bar */
 .actionbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:9px;padding:10px 12px;margin-bottom:12px;transition:.2s;}
@@ -114,7 +127,11 @@ select.pill:focus{outline:none;border-color:var(--artifact-primary-brand);}
 
 /* table */
 .tablewrap{border:1px solid var(--artifact-border-light);border-radius:9px;overflow:hidden;}
-.tablescroll{max-height:60vh;overflow:auto;}
+.tablescroll{max-height:60vh;overflow:auto;scrollbar-color:var(--artifact-border-dark) var(--artifact-background-light);scrollbar-width:thin;}
+.tablescroll::-webkit-scrollbar{width:10px;height:10px;}
+.tablescroll::-webkit-scrollbar-track{background:var(--artifact-background-light);}
+.tablescroll::-webkit-scrollbar-thumb{background:var(--artifact-border-dark);border:2px solid var(--artifact-background-light);border-radius:99px;}
+.tablescroll::-webkit-scrollbar-thumb:hover{background:var(--artifact-text-secondary);}
 table{width:100%;border-collapse:collapse;font-size:13.5px;}
 thead th{position:sticky;top:0;background:var(--artifact-background-mid);text-align:left;padding:10px 12px;border-bottom:1px solid var(--artifact-border-light);cursor:pointer;white-space:nowrap;z-index:2;}
 thead th.num{text-align:right;}
@@ -143,7 +160,7 @@ td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:"SF Mono",
 .badge.merged{background:var(--artifact-text-highlight);color:var(--artifact-primary-brand);}
 .hscore{font-family:"SF Mono",monospace;font-weight:600;font-size:12.5px;}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle;}
-input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15px;height:15px;cursor:pointer;}
+input[type=checkbox].rowchk:disabled{cursor:not-allowed;opacity:.55;}
 
 /* inspector */
 .inspector{position:sticky;top:16px;background:var(--artifact-background-light);border:1px solid var(--artifact-border-light);border-radius:10px;padding:18px;}
@@ -218,7 +235,10 @@ input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15p
 <div class="wrap">
 
   <div class="hero" data-glean-id="hero">
-    <span class="eyebrow">Data Governance &amp; Hygiene · Interactive Sandbox</span>
+    <div class="hero-top">
+      <span class="eyebrow">Data Governance &amp; Hygiene · Interactive Sandbox</span>
+      <button id="theme-toggle" class="theme-toggle" type="button" data-glean-id="theme-toggle" aria-pressed="false" aria-label="Switch to dark theme">Dark theme</button>
+    </div>
     <h1>Taxonomy Cleanup Simulator</h1>
     <p class="lede">A safe playground modeling an Amplitude project's taxonomy. Query the catalog, surface bad taxonomy players and stale events, then <b>delete, block, hide, drop, or merge</b> them — and watch the downstream implications update live. Nothing here touches a real project; reset anytime.</p>
   </div>
@@ -236,7 +256,7 @@ input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15p
       <div class="sub" id="k-active-sub">in tracking plan</div>
     </div>
     <div class="kpi" data-glean-id="kpi-limit">
-      <div class="label">Instrumentation Limit <span class="info" tabindex="0">i<span class="tip">Events counting toward the project's event-type limit (cap = 500 in this demo). Hidden and blocked events still count; deleted events do not.</span></span></div>
+      <div class="label">Instrumentation Limit <span class="info" tabindex="0">i<span class="tip">Events counting toward the project's event-type limit (cap = 2000 in this demo). Hidden and blocked events still count; deleted events do not.</span></span></div>
       <div class="value" id="k-limit">—</div>
       <div class="gauge"><i id="k-limit-bar"></i></div>
     </div>
@@ -287,6 +307,7 @@ input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15p
         <button class="btn" id="a-block" disabled title="Stop future ingestion, keep in dropdowns">⛔ Block</button>
         <button class="btn" id="a-hide" disabled title="Remove from UI dropdowns only">🙈 Hide</button>
         <button class="btn" id="a-drop" disabled title="Query-time drop filter, fully reversible">⌦ Drop filter</button>
+        <button class="btn" id="a-rename" disabled title="Change the UI display name without changing the ingested event">✎ Rename display name</button>
         <button class="btn primary" id="a-merge" disabled title="Merge 2+ events into one (needs 2+ selected)">⇄ Merge / Transform</button>
         <button class="btn ghost" id="a-clear" disabled>Clear</button>
       </div>
@@ -339,41 +360,46 @@ input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15p
     <h2 style="margin-top:8px">Delete vs. Block vs. Hide vs. Drop vs. Merge</h2>
     <table class="reftable">
       <thead>
-        <tr><th>Action</th><th>Stops ingestion?</th><th>Counts to limit?</th><th>Reversible?</th><th>What it's for</th></tr>
+        <tr><th>Action</th><th>Stops ingestion?</th><th>Count towards<br>monthly event volume limit</th><th>Count towards<br>2000 event type limit</th><th>Reversible?</th><th>What it's for</th></tr>
       </thead>
       <tbody>
         <tr>
           <td>Delete</td>
           <td class="yes">Yes (future)</td>
-          <td class="no">No — frees limit</td>
+          <td class="no">No</td>
+          <td class="no">No</td>
           <td class="yes">Recover anytime</td>
           <td>Retire an event from the plan. History stays; it leaves dropdowns and future ingestion is blocked.</td>
         </tr>
         <tr>
           <td>Block</td>
           <td class="yes">Yes (future)</td>
-          <td class="no">Still counts</td>
-          <td>Unblock — but data during block is lost</td>
+          <td class="no">No</td>
+          <td class="yes">Yes</td>
+          <td>Unblock, but data during block is lost</td>
           <td>Quickly stop ingesting bad/redundant data before a code fix. Blocked data can't be recovered.</td>
         </tr>
         <tr>
           <td>Hide</td>
           <td class="no">No — keeps ingesting</td>
-          <td class="no">Still counts</td>
+          <td class="yes">Yes</td>
+          <td class="yes">Yes</td>
           <td class="yes">Fully, no data loss</td>
           <td>Declutter dropdowns for an event you might need later. Nothing is lost.</td>
         </tr>
         <tr>
           <td>Drop filter</td>
           <td class="no">No (query-time)</td>
-          <td class="no">Doesn't affect volume</td>
+          <td class="no">No</td>
+          <td class="yes">Yes</td>
           <td class="yes">Fully, edit/delete filter</td>
           <td>Hide events from charts at query time. Doesn't apply to exports; data still ingested.</td>
         </tr>
         <tr>
           <td>Merge / Transform</td>
           <td class="no">No (query-time)</td>
-          <td class="no">Raw data untouched</td>
+          <td class="yes">Yes, raw data</td>
+          <td class="no">No, transformed events</td>
           <td class="yes">Unmerge anytime</td>
           <td>Consolidate duplicate events/properties into one, retroactively across all history.</td>
         </tr>
@@ -408,7 +434,7 @@ input[type=checkbox].rowchk{accent-color:var(--artifact-primary-brand);width:15p
 
 <script>
 /* ---------------- Data model ---------------- */
-const LIMIT_CAP = 500;
+const LIMIT_CAP = 2000;
 const fmt = n => n>=1000000 ? (n/1000000).toFixed(1)+'M' : n>=1000 ? (n/1000).toFixed(n>=10000?0:1)+'k' : (''+n);
 
 // seed taxonomy — mix of clean, stale, mis-named, dupes, unexpected, high-volume
@@ -449,9 +475,10 @@ function isTitleCase(name){
   const words = name.trim().split(/\s+/);
   return words.every(w => /^[A-Z0-9\[]/.test(w));    // each word starts uppercase (allow [Amplitude])
 }
+function displayNameFor(e){ return e.displayName || e.name; }
 function flagsFor(e){
   const f=[];
-  if(!isTitleCase(e.name)) f.push({t:'naming',crit:true});
+  if(!isTitleCase(displayNameFor(e))) f.push({t:'naming',crit:true});
   if(!e.desc) f.push({t:'no description'});
   if(!e.owner) f.push({t:'no owner'});
   if(!e.cat) f.push({t:'no category'});
@@ -524,13 +551,13 @@ function visibleEvents(){
   let list=events.filter(e=>{
     if(!showGone && e.state!=='active') return false;
     if(q){
-      const hay=(e.name+' '+e.owner+' '+e.cat+' '+e.src).toLowerCase();
+      const hay=(displayNameFor(e)+' '+e.name+' '+e.owner+' '+e.cat+' '+e.src).toLowerCase();
       if(!hay.includes(q)) return false;
     }
     if(fs!=='all' && e.status!==fs) return false;
     if(fh==='issues' && flagsFor(e).length===0) return false;
     if(fh==='stale' && e.lastVol<90) return false;
-    if(fh==='naming' && isTitleCase(e.name)) return false;
+    if(fh==='naming' && isTitleCase(displayNameFor(e))) return false;
     if(fh==='clean' && flagsFor(e).length>0) return false;
     return true;
   });
@@ -538,7 +565,7 @@ function visibleEvents(){
   list.sort((a,b)=>{
     let va,vb;
     switch(sortKey){
-      case 'name': va=a.name.toLowerCase(); vb=b.name.toLowerCase(); break;
+      case 'name': va=displayNameFor(a).toLowerCase(); vb=displayNameFor(b).toLowerCase(); break;
       case 'status': va=a.status; vb=b.status; break;
       case 'health': va=healthScore(a); vb=healthScore(b); break;
       case 'lastVol': va=a.lastVol; vb=b.lastVol; break;
@@ -574,10 +601,12 @@ function renderTable(){
         : '<span class="badge '+e.state+'">'+e.state+(e.mergedInto?(' → '+shortName(e.mergedInto)):'')+'</span>';
     const flagHtml = e.state==='active' && f.length
         ? '<div class="flags">'+f.map(x=>'<span class="flag'+(x.crit?' crit':'')+'">'+x.t+'</span>').join('')+'</div>' : '';
+    const label=displayNameFor(e);
+    const ingestedMeta=e.displayName?'ingested: '+esc(e.name)+' · ':'';
     tr.innerHTML =
       '<td><input type="checkbox" class="rowchk" data-id="'+e.id+'" '+(selected.has(e.id)?'checked':'')+(e.state!=='active'?' disabled':'')+'></td>'+
-      '<td><div class="evname '+(!isTitleCase(e.name)&&e.state==='active'?'bad':'')+'"><span class="nm mono">'+esc(e.name)+'</span></div>'+
-        '<div class="evmeta">'+(e.cat||'—')+' · '+e.src+'</div>'+flagHtml+'</td>'+
+      '<td><div class="evname '+(!isTitleCase(label)&&e.state==='active'?'bad':'')+'"><span class="nm mono">'+esc(label)+'</span></div>'+
+        '<div class="evmeta">'+ingestedMeta+(e.cat||'—')+' · '+e.src+'</div>'+flagHtml+'</td>'+
       '<td>'+badge+'</td>'+
       '<td class="num"><span class="hscore"><span class="dot" style="background:'+dot+'"></span>'+hs+'</span></td>'+
       '<td class="num">'+lastVolTxt+'</td>'+
@@ -598,7 +627,7 @@ function renderTable(){
   const visActive=list.filter(e=>e.state==='active');
   selall.checked = visActive.length>0 && visActive.every(e=>selected.has(e.id));
 }
-function shortName(id){const e=events.find(x=>x.id===id);return e?e.name:id;}
+function shortName(id){const e=events.find(x=>x.id===id);return e?displayNameFor(e):id;}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 /* ---------------- Selection + inspector ---------------- */
@@ -608,6 +637,7 @@ function syncSelectionUI(){
   const bar=document.getElementById('actionbar');
   bar.classList.toggle('disabled',n===0);
   ['a-delete','a-block','a-hide','a-drop','a-clear'].forEach(id=>document.getElementById(id).disabled=n===0);
+  document.getElementById('a-rename').disabled = n!==1 || selectedActive().length!==1;
   document.getElementById('a-merge').disabled = n<2;
   document.querySelectorAll('#tbody tr').forEach(tr=>{
     const cb=tr.querySelector('.rowchk');
@@ -714,6 +744,25 @@ function openConfirm(actionKey){
   document.getElementById('overlay').classList.add('open');
 }
 
+function openRename(){
+  const sel=selectedActive();
+  if(sel.length!==1) return;
+  const e=sel[0];
+  pendingAction={key:'rename', ids:[e.id], previousDisplayName:e.displayName||null};
+  document.getElementById('m-eyebrow').textContent='Improve data quality';
+  document.getElementById('m-title').textContent='Change display name';
+  document.getElementById('m-targets').innerHTML='<span class="field-label" style="display:block;margin-bottom:6px">Ingested event</span><span class="srcpill">'+esc(e.name)+'</span>';
+  document.getElementById('m-implications').innerHTML=[
+    {t:'Updates the <b>display name in the UI</b> without changing the ingested event name.', cls:'pos'},
+    {t:'A clear Title Case name can remove the <b>naming violation</b> and improve the governance score.', cls:'pos'},
+    {t:'Historical data, future ingestion, charts, and the event type itself remain unchanged.'},
+    {t:'Reversible from the activity log.', cls:'pos'}
+  ].map(i=>'<li class="'+(i.cls||'')+'">'+i.t+'</li>').join('');
+  document.getElementById('m-merge-cfg').innerHTML='<div class="mergecfg"><label>New display name</label><input type="text" id="display-name" value="'+esc(displayNameFor(e))+'" autofocus><div class="src-note" style="margin-top:0">Use a clear, Title Case label. The raw ingested name stays '+esc(e.name)+'.</div></div>';
+  document.getElementById('m-confirm').textContent='Save display name';
+  document.getElementById('overlay').classList.add('open');
+}
+
 function openMerge(){
   const sel=selectedActive();
   if(sel.length<2) return;
@@ -745,16 +794,24 @@ function openMerge(){
 }
 function suggestMergeName(sel){
   // crude: shared prefix words or a Title Case guess
-  const clean=sel.filter(e=>isTitleCase(e.name));
-  if(clean.length) return clean[0].name;
-  return sel[0].name.replace(/[_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const clean=sel.filter(e=>isTitleCase(displayNameFor(e)));
+  if(clean.length) return displayNameFor(clean[0]);
+  return displayNameFor(sel[0]).replace(/[_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 }
 
 function confirmAction(){
   if(!pendingAction) return;
   const sel=pendingAction.ids.map(id=>events.find(e=>e.id===id)).filter(Boolean);
   let msg, undoIds=pendingAction.ids.slice(), kind=pendingAction.key;
-  if(pendingAction.key==='merge'){
+  if(pendingAction.key==='rename'){
+    const e=sel[0];
+    const next=(document.getElementById('display-name').value||'').trim();
+    if(!next){ toast('Enter a display name'); return; }
+    const previousDisplayName=e.displayName||null;
+    e.displayName=next===e.name?null:next;
+    msg='Changed display name for <b>'+esc(e.name)+'</b> to <b>'+esc(next)+'</b>';
+    undoIds={id:e.id, previousDisplayName:previousDisplayName};
+  } else if(pendingAction.key==='merge'){
     const name=(document.getElementById('merge-name').value||'Merged Event').trim();
     const addProp=document.getElementById('merge-prop').value;
     const totalVol=sel.reduce((a,e)=>a+e.vol30d,0);
@@ -775,7 +832,10 @@ function confirmAction(){
 }
 
 function undo(entry){
-  if(entry.kind==='merge'){
+  if(entry.kind==='rename'){
+    const e=events.find(x=>x.id===entry.undoIds.id);
+    if(e) e.displayName=entry.undoIds.previousDisplayName||null;
+  } else if(entry.kind==='merge'){
     const merged=events.find(e=>e.id===entry.undoIds.newId);
     if(merged) events=events.filter(e=>e.id!==merged.id);
     entry.undoIds.sources.forEach(id=>{const e=events.find(x=>x.id===id);if(e){e.state='active';e.mergedInto=null;}});
@@ -794,7 +854,7 @@ function renderLog(){
   logEntries.forEach(entry=>{
     const li=document.createElement('li');
     const t=entry.time.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    const undoLabel = entry.kind==='merge'?'Unmerge': entry.kind==='delete'?'Recover': entry.kind==='block'?'Unblock': entry.kind==='hide'?'Unhide':'Remove filter';
+    const undoLabel = entry.kind==='rename'?'Undo rename': entry.kind==='merge'?'Unmerge': entry.kind==='delete'?'Recover': entry.kind==='block'?'Unblock': entry.kind==='hide'?'Unhide':'Remove filter';
     li.innerHTML='<span class="t">'+t+'</span><span class="msg">'+entry.msg+'</span>';
     const u=document.createElement('span'); u.className='undo interactive-only'; u.textContent='↩ '+undoLabel;
     u.addEventListener('click',()=>undo(entry));
@@ -839,6 +899,7 @@ document.getElementById('a-delete').addEventListener('click',()=>openConfirm('de
 document.getElementById('a-block').addEventListener('click',()=>openConfirm('block'));
 document.getElementById('a-hide').addEventListener('click',()=>openConfirm('hide'));
 document.getElementById('a-drop').addEventListener('click',()=>openConfirm('drop'));
+document.getElementById('a-rename').addEventListener('click',openRename);
 document.getElementById('a-merge').addEventListener('click',openMerge);
 document.getElementById('a-clear').addEventListener('click',()=>{selected.clear();refreshAll();});
 document.getElementById('m-cancel').addEventListener('click',closeModal);
@@ -846,6 +907,21 @@ document.getElementById('m-confirm').addEventListener('click',confirmAction);
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 document.getElementById('reset').addEventListener('click',()=>{init();toast('Simulator reset');});
+
+/* ---------------- Theme toggle ---------------- */
+const themeToggle = document.getElementById('theme-toggle');
+function applyTheme(mode){
+  const dark = mode === 'dark';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  themeToggle.textContent = dark ? 'Light theme' : 'Dark theme';
+  themeToggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+  themeToggle.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+  try{ localStorage.setItem('governance-sim-theme', dark ? 'dark' : 'light'); }catch(e){}
+}
+let savedTheme = 'light';
+try{ savedTheme = localStorage.getItem('governance-sim-theme') || 'light'; }catch(e){}
+applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
+themeToggle.addEventListener('click',()=>applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
 
 init();
 
